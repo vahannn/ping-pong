@@ -1,0 +1,45 @@
+.board {
+    width: 1400px;
+    height: 700px;
+    background-color: aquamarine;
+    margin: 0 auto;
+    position: relative;
+}
+#line {
+    width: 2px;
+    height: 100%;
+    background-color: black;
+    margin: 0 auto;
+}
+
+.players {
+    display: flex;
+    justify-content: space-between;
+    padding: 0px 5px;
+    position: absolute;
+    top: 50%;
+}
+
+.player {
+    width: 5px;
+    height: 40px;
+    background-color: rgb(0, 0, 0);
+}
+
+.player2 {
+    right: 0;
+    margin-left: 1380px;
+}
+
+.ball {
+    margin: auto;
+    width: 20px;
+    height: 20px;
+    background-color: rgb(163, 26, 46);
+    border-radius: 30px;
+    position: absolute;
+    top: 50%;
+    margin-left: 49.3%;
+}
+
+
