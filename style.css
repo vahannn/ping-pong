@@ -1,10 +1,11 @@
 #board {
-    width: 1400px;
-    height: 700px;
+    width: 700px;
+    height: 500px;
     background-color: aquamarine;
-    margin: 0 auto;
-    position: relative;
+    /* margin: 0 auto; */
+    /* position: relative; */
 }
+
 #line {
     width: 2px;
     height: 100%;
@@ -32,14 +33,14 @@
 }
 
 #ball {
-    margin: auto;
+    /* margin: auto; */
     width: 20px;
     height: 20px;
     background-color: rgb(163, 26, 46);
     border-radius: 30px;
-    position: absolute;
-    top: 49%;
-    margin-left: 49.3%;
+    /* position: absolute; */
+    /* top: 49%; */
+    /* margin-left: 49.3%; */
 }
 
 .play_button_div {
