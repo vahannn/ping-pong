@@ -4,13 +4,14 @@ class Ball {
         this._y = y;
         this._radius = radius;
         this._style = style;
+        this._direction = -1;
+        this._speed = 0.5;
     };
     draw() {
         context.beginPath();
-        context.arc(this._x, this._y, this.radius, 0, 2 * Math.PI);
+        context.arc(this._x, this._y, this._radius, 0, 2 * Math.PI);
         // context.arc(100, 75, 5, 0, 2 * Math.PI);
         // context.fillStyle = this._style;
-        console.log(this);
         context.fill();
         // context.fillRect(50, 50, 20, 20);
         // context.fill();
@@ -34,13 +35,37 @@ function draw() {
 // context.strokeRect(75, 0, 150, 110);;
 // context.stroke();
 
+let dx = Math.floor(Math.random() * 4) + 3;
+let dy = Math.floor(Math.random() * 4) + 3;
 
 function loop() {
     requestAnimationFrame(loop);
-    // data.ball._x += 1;
-    // draw();
-}
+    if (data.ball._x + (data.ball._radius * 2) >= canvas.width ) {
+        data.ball._direction *= -1;
+        dx = Math.floor(Math.random() * 4) + 3;
+        dy = Math.floor(Math.random() * 4) + 3;
+    } else if (data.ball._x - (data.ball._radius * 2) <= 0) {
+        dx = Math.floor(Math.random() * 4) + 3;
+        dy = Math.floor(Math.random() * 4) + 3;
+        data.ball._direction *= -1;
+    } else if (data.ball._y + (data.ball._radius * 2) >= canvas.height ) {
+        dx = Math.floor(Math.random() * 4) + 3;
+        dy = Math.floor(Math.random() * 4) + 3;
+        data.ball._direction *= -1;
+    } else if (data.ball._y - (data.ball._radius * 2) <= 0) {
+        dx = Math.floor(Math.random() * 4) + 3;
+        dy = Math.floor(Math.random() * 4) + 3;
+        data.ball._direction *= -1;
+    }
+    
+
+    data.ball._x += dx * data.ball._direction * data.ball._speed;
+    data.ball._y += dy * data.ball._direction * data.ball._speed;
+    
+    context.clearRect(0, 0, canvas.width, canvas.height);
     draw();
+}
+// draw();
 
 loop();
 
