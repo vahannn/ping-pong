@@ -1,20 +1,64 @@
+
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
 class Ball {
     constructor(x, y, radius, style) {
         this._x = x;
         this._y = y;
         this._radius = radius;
         this._style = style;
-        this._direction = -1;
-        this._speed = 0.5;
+        // this._directionVert = -1;
+        // this._directionHoriz = -1;
+        // this._speed = 1;
+        this._dx = getRandomArbitrary(1.4, 2);
+        this._dy = getRandomArbitrary(-0.5, 0.5);
+        // this._dx = 0.2;
+        // this._dy = 0.1;
     };
+
     draw() {
-        context.beginPath();
-        context.arc(this._x, this._y, this._radius, 0, 2 * Math.PI);
+        // context.beginPath();
+        // context.arc(this._x, this._y, this._radius, 0, 2 * Math.PI);
         // context.arc(100, 75, 5, 0, 2 * Math.PI);
         // context.fillStyle = this._style;
-        context.fill();
-        // context.fillRect(50, 50, 20, 20);
         // context.fill();
+        context.fillRect(this._x, this._y, this._radius * 2, this._radius * 2);
+        // context.fill();
+    }
+
+    collides() {
+        const min = 0.5;
+        const max = 3;
+        if (this._x + (this._radius * 2) >= canvas.width ) {
+            this._x = canvas.width - (this._radius * 2);
+            this._dx = -this._dx * 1.03;
+            if (this._dy < 0) {
+                this._dy = -getRandomArbitrary(min, max);
+            } else {
+                this._dy = getRandomArbitrary(min, max);
+            }
+        } else if (this._x <= 0) {
+            this._x = 0;
+            this._dx = -this._dx * 1.03;
+            if (this._dy < 0) {
+                this._dy = -getRandomArbitrary(min, max);
+            } else {
+                this._dy = getRandomArbitrary(min, max);
+            }
+        } else if (this._y + (this._radius * 2) >= canvas.height ) {
+            this._y = canvas.height - (this._radius * 2);
+            this._dy = -this._dy;
+        } else if (this._y <= 0) {
+            this._y = 0;
+            this._dy = -this._dy;
+        }
+    }
+
+    update () {
+        this._x += this._dx;
+        this._y += this._dy;
     }
 }
 
@@ -22,46 +66,36 @@ const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
 
 let data = {
-    ball: new Ball(100, 75, 5, "red")
+    ball: [new Ball(100, 75, 5, "red")/* , new Ball(50, 600, 5, "red") */]
+    // ball: new Ball(100, 75, 5, "red"),
 }
-
+console.log(data);
 // let ball = new Ball(0, 0, 5, "red")
 
 function draw() {
-    data.ball.draw();
+    data.ball[0].draw();
+    // data.ball[1].draw();
 }
 
 // context.fillStyle = "red";
 // context.strokeRect(75, 0, 150, 110);;
 // context.stroke();
 
-let dx = Math.floor(Math.random() * 4) + 3;
-let dy = Math.floor(Math.random() * 4) + 3;
+
+
+
+
+function update() {
+    // data.ball[0].moveBall();
+    data.ball[0].collides();
+    data.ball[0].update();
+
+    // data.ball[1].moveBall();
+}
 
 function loop() {
     requestAnimationFrame(loop);
-    if (data.ball._x + (data.ball._radius * 2) >= canvas.width ) {
-        data.ball._direction *= -1;
-        dx = Math.floor(Math.random() * 4) + 3;
-        dy = Math.floor(Math.random() * 4) + 3;
-    } else if (data.ball._x - (data.ball._radius * 2) <= 0) {
-        dx = Math.floor(Math.random() * 4) + 3;
-        dy = Math.floor(Math.random() * 4) + 3;
-        data.ball._direction *= -1;
-    } else if (data.ball._y + (data.ball._radius * 2) >= canvas.height ) {
-        dx = Math.floor(Math.random() * 4) + 3;
-        dy = Math.floor(Math.random() * 4) + 3;
-        data.ball._direction *= -1;
-    } else if (data.ball._y - (data.ball._radius * 2) <= 0) {
-        dx = Math.floor(Math.random() * 4) + 3;
-        dy = Math.floor(Math.random() * 4) + 3;
-        data.ball._direction *= -1;
-    }
-    
-
-    data.ball._x += dx * data.ball._direction * data.ball._speed;
-    data.ball._y += dy * data.ball._direction * data.ball._speed;
-    
+    update();
     context.clearRect(0, 0, canvas.width, canvas.height);
     draw();
 }
