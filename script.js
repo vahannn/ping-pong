@@ -3,7 +3,33 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-class Ball {
+class player
+{
+    constructor(x, y, width, height, id, style) {
+        this._id = id;
+        this._x = x;
+        this._y = y;
+        this._style = style;
+        this._speed = 1;
+        this._width = width;
+        this._height = height;
+    };
+
+    moveUp() {
+        this._y -= this._speed;
+    }
+
+    moveDown() {
+        this._y += this._speed;
+    }
+
+    draw() {
+        context.fillRect(this._x, this._y, this._width, this._height);
+    }
+}
+
+class Ball
+{
     constructor(x, y, radius, style) {
         this._x = x;
         this._y = y;
@@ -14,8 +40,6 @@ class Ball {
         // this._speed = 1;
         this._dx = getRandomArbitrary(1.4, 2);
         this._dy = getRandomArbitrary(-0.5, 0.5);
-        // this._dx = 0.2;
-        // this._dy = 0.1;
     };
 
     draw() {
@@ -56,6 +80,17 @@ class Ball {
         }
     }
 
+    collides(player) {
+        if (this._x > player._x + player._width || player._x > this._x + this._width) {
+            return false
+        }
+
+        if (this._y > player._y + player._height || player._y > this._y + this._height) {
+            return false
+        }
+        return (true);
+    }
+
     update () {
         this._x += this._dx;
         this._y += this._dy;
@@ -65,41 +100,87 @@ class Ball {
 const canvas = document.querySelector("canvas");
 const context = canvas.getContext("2d");
 
+const playerWidth = 7;
+const playerHeight = 30;
+
 let data = {
-    ball: [new Ball(100, 75, 5, "red")/* , new Ball(50, 600, 5, "red") */]
-    // ball: new Ball(100, 75, 5, "red"),
+    ball: new Ball(100, 75, 5, "red"),
+    player1: new player(canvas.width - 5 - playerWidth, canvas.height / 2 - playerHeight / 2, playerWidth, playerHeight, "left"),
+    player2: new player(5, canvas.height / 2 - playerHeight / 2, playerWidth, playerHeight, "right"),
 }
+
+let componentsToDraw = [data.ball, data.player1, data.player2];
 console.log(data);
 // let ball = new Ball(0, 0, 5, "red")
 
-function draw() {
-    data.ball[0].draw();
-    // data.ball[1].draw();
+function drawComponents() {
+    for (let i = 0; i < componentsToDraw.length; i++) {
+        componentsToDraw[i].draw();
+    }
 }
-
-// context.fillStyle = "red";
-// context.strokeRect(75, 0, 150, 110);;
-// context.stroke();
-
-
-
 
 
 function update() {
-    // data.ball[0].moveBall();
-    data.ball[0].collides();
-    data.ball[0].update();
+    const ball = data.ball;
+    const player1 = data.ball;
+    const player2 = data.ball;
+    const min = 0.5;
+    const max = 3;
 
-    // data.ball[1].moveBall();
+    if (ball.collides(data.player1)) {
+        ball._dx = -ball._dx * 1.03
+        ball._x = player1._x + 5
+    
+        if (ball._dy < 0)
+            ball._dy = -getRandomArbitrary(min, max)
+        else
+            ball._dy = getRandomArbitrary(min, max)
+    }
+    if (data.ball.collides(data.player2)) {
+        ball._dx = -ball._dx * 1.03
+        ball._x = player2._x - 4
+
+        if (ball._dy < 0)
+            ball._dy = -getRandomArbitrary(min, max)
+        else
+            ball._dy = getRandomArbitrary(min, max)
+    }
+
+/* 
+    if (ball._x + (ball._radius * 2) >= canvas.width ) {
+        ball._x = canvas.width - (ball._radius * 2);
+        ball._dx = -ball._dx * 1.03;
+        if (ball._dy < 0) {
+            ball._dy = -getRandomArbitrary(min, max);
+        } else {
+            ball._dy = getRandomArbitrary(min, max);
+        }
+    } else if (ball._x <= 0) {
+        ball._x = 0;
+        ball._dx = -ball._dx * 1.03;
+        if (ball._dy < 0) {
+            ball._dy = -getRandomArbitrary(min, max);
+        } else {
+            ball._dy = getRandomArbitrary(min, max);
+        }
+    } else */ if (ball._y + (ball._radius * 2) >= canvas.height ) {
+        ball._y = canvas.height - (ball._radius * 2);
+        ball._dy = -ball._dy;
+    } else if (ball._y <= 0) {
+        ball._y = 0;
+        ball._dy = -ball._dy;
+    }
 }
 
 function loop() {
     requestAnimationFrame(loop);
     update();
     context.clearRect(0, 0, canvas.width, canvas.height);
-    draw();
+    data.ball.update();
+    drawComponents();
 }
-// draw();
+// drawComponents();
+
 
 loop();
 
