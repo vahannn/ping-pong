@@ -55,7 +55,7 @@ async def hello(websocket):
     print(f'Server Sent: {payLoadStringify}')
 
 async def main():
-    async with websockets.serve(hello, "localhost", 8765):
+    async with websockets.serve(hello, "localhost", 5000):
         await asyncio.Future()  # run forever
 
 if __name__ == "__main__":
