@@ -3,22 +3,209 @@ import websockets
 import json
 import jsonpickle
 import uuid
+import pygame
+
+pygame.init()
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+WIDTH, HEIGHT = 700, 500
+# WIN = pygame.display.set_mode((WIDTH, HEIGHT))
+# pygame.display.set_caption("Pong")
+
+FPS = 60
+PADDLE_WIDTH, PADDLE_HEIGHT = 20, 100
+BALL_RADIUS = 7
+
+# SCORE_FONT = pygame.font.SysFont("comicsans", 50)
+WINNING_SCORE = 10
+
+viewersSocket = {}
+
+def json_dump_obj(self) -> dict:
+    return {"websocket": "null" }
+
+
+async def send_obj(obj, ws):
+    payLoadStringify = json.dumps(obj, default=vars)
+    await ws.send(payLoadStringify)
+
+websockets.json_dump_obj = json_dump_obj
+
+class Paddle:
+    COLOR = WHITE
+    VEL = 4
+
+    def __init__(self, x, y, width, height):
+        self.x = self.original_x = x
+        self.y = self.original_y = y
+        self.width = width
+        self.height = height
+
+    def draw(self, win):
+        pygame.draw.rect(
+            win, self.COLOR, (self.x, self.y, self.width, self.height))
+
+    def move(self, up=True):
+        if up:
+            self.y -= self.VEL
+        else:
+            self.y += self.VEL
+
+    def reset(self):
+        self.x = self.original_x
+        self.y = self.original_y
+
+class Ball:
+    MAX_VEL = 5
+    COLOR = WHITE
+
+    def __init__(self, x, y, radius):
+        self.x = self.original_x = x
+        self.y = self.original_y = y
+        self.radius = radius
+        self.x_vel = self.MAX_VEL
+        self.y_vel = 0
+
+    def draw(self, win):
+        pygame.draw.circle(win, self.COLOR, (self.x, self.y), self.radius)
+
+    def move(self):
+        self.x += self.x_vel
+        self.y += self.y_vel
+
+    def reset(self):
+        self.x = self.original_x
+        self.y = self.original_y
+        self.y_vel = 0
+        self.x_vel *= -1
+
 class Player:
 
-    def __init__(self, id):
+    def __init__(self, id, paddle):
         self.id = id
         self.score = 0
+        self.paddle = paddle
+        # self.websocket = websocket
+
+
+
 
 class Game:
+    
     MAX_PLAYER = 2
 
     def __init__(self, id):
         self.id = id
         self.playeres = []
+        self.viewersSocket = list()
 
-    def addPlayer(self, Player):
+    def addPlayer(self, id, websocket):
         if len(self.playeres) < self.MAX_PLAYER:
-            self.playeres.append(Player)
+            if len(self.playeres) == 0:
+                player = Player(id, Paddle(10, HEIGHT//2 - PADDLE_HEIGHT //
+                                2, PADDLE_WIDTH, PADDLE_HEIGHT))
+            else:
+                player = Player(id, Paddle(WIDTH - 10 - PADDLE_WIDTH, HEIGHT //
+                                2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT))
+            self.playeres.append(player)
+            # self.viewersSocket.append(websocket)
+            self.viewersSocket.append(websocket)
+
+    def handle_collision(ball, left_paddle, right_paddle):
+        if ball.y + ball.radius >= HEIGHT:
+            ball.y_vel *= -1
+        elif ball.y - ball.radius <= 0:
+            ball.y_vel *= -1
+
+        if ball.x_vel < 0:
+            if ball.y >= left_paddle.y and ball.y <= left_paddle.y + left_paddle.height:
+                if ball.x - ball.radius <= left_paddle.x + left_paddle.width:
+                    ball.x_vel *= -1
+
+                    middle_y = left_paddle.y + left_paddle.height / 2
+                    difference_in_y = middle_y - ball.y
+                    reduction_factor = (left_paddle.height / 2) / ball.MAX_VEL
+                    y_vel = difference_in_y / reduction_factor
+                    ball.y_vel = -1 * y_vel
+
+        else:
+            if ball.y >= right_paddle.y and ball.y <= right_paddle.y + right_paddle.height:
+                if ball.x + ball.radius >= right_paddle.x:
+                    ball.x_vel *= -1
+
+                    middle_y = right_paddle.y + right_paddle.height / 2
+                    difference_in_y = middle_y - ball.y
+                    reduction_factor = (right_paddle.height / 2) / ball.MAX_VEL
+                    y_vel = difference_in_y / reduction_factor
+                    ball.y_vel = -1 * y_vel
+
+
+    def handle_paddle_movement(keys, left_paddle, right_paddle):
+        # if keys[pygame.K_w] and left_paddle.y - left_paddle.VEL >= 0:
+        #     left_paddle.move(up=True)
+        # if keys[pygame.K_s] and left_paddle.y + left_paddle.VEL + left_paddle.height <= HEIGHT:
+        #     left_paddle.move(up=False)
+
+        if keys[pygame.K_UP] and right_paddle.y - right_paddle.VEL >= 0:
+            right_paddle.move(up=True)
+        if keys[pygame.K_DOWN] and right_paddle.y + right_paddle.VEL + right_paddle.height <= HEIGHT:
+            right_paddle.move(up=False)
+
+    def start():
+        run = True
+        clock = pygame.time.Clock()
+
+        left_paddle = Paddle(10, HEIGHT//2 - PADDLE_HEIGHT //
+                            2, PADDLE_WIDTH, PADDLE_HEIGHT)
+        right_paddle = Paddle(WIDTH - 10 - PADDLE_WIDTH, HEIGHT //
+                            2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
+        ball = Ball(WIDTH // 2, HEIGHT // 2, BALL_RADIUS)
+
+        left_score = 0
+        right_score = 0
+
+        while run:
+            clock.tick(FPS)
+            draw(WIN, [left_paddle, right_paddle], ball, left_score, right_score)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                    break
+
+            keys = pygame.key.get_pressed()
+            handle_paddle_movement(keys, left_paddle, right_paddle)
+
+            ball.move()
+            handle_collision(ball, left_paddle, right_paddle)
+
+            if ball.x < 0:
+                right_score += 1
+                ball.reset()
+            elif ball.x > WIDTH:
+                left_score += 1
+                ball.reset()
+
+            won = False
+            if left_score >= WINNING_SCORE:
+                won = True
+                win_text = "Left Player Won!"
+            elif right_score >= WINNING_SCORE:
+                won = True
+                win_text = "Right Player Won!"
+
+            if won:
+                text = SCORE_FONT.render(win_text, 1, WHITE)
+                WIN.blit(text, (WIDTH//2 - text.get_width() //
+                                2, HEIGHT//2 - text.get_height()//2))
+                pygame.display.update()
+                pygame.time.delay(5000)
+                ball.reset()
+                left_paddle.reset()
+                right_paddle.reset()
+                left_score = 0
+                right_score = 0
 
 games = {}
 
@@ -28,6 +215,7 @@ async def server(websocket, path):
             result = json.loads(message)
             print("Server Received: ", message)
             payLoad = {}
+            # del test_dict['Mani']
             if result["method"] == "create":
                 gameId = uuid.uuid4()
                 gameId = str(gameId)
@@ -35,26 +223,66 @@ async def server(websocket, path):
                 # print(gameId)
                 game = Game(gameId)
                 games[gameId] = game
-                game.addPlayer(Player(result["clientId"]))
+                game.addPlayer(result["clientId"], websocket)
                 payLoad = {
                     "method": "create",
-                    "game" : game
+                    "game": game,
                 }
+                del payLoad["game"].viewersSocket
+                # del payLoad['game']["viewersSocket"]
             if result["method"] == "join":
+                payLoad = {
+                    "method": "join",
+                }
                 gameId = result["gameId"]
-                try:
-                    game = games[gameId]
-                    game.addPlayer(Player(result["clientId"]))
+                # try:
+                if gameId == None:
+                    payLoad["error"] = "game is not found"
+                else:
+                    try:
+                        game = games[gameId]
+                        if len(game.playeres) >= 2:
+                            payLoad["game"] = {
+                                "id": game.id,
+                                "playeres": game.playeres,
+                            }
+                            payLoad["error"] = "game is full"
+                        else:
+                            game.addPlayer(result["clientId"], websocket)
+                            payLoad = payLoad["game"] = {
+                                "id": game.id,
+                                "playeres": game.playeres,
+                            }
+                    except KeyError:
+                        payLoad["error"] = "game is not found"
+                if result["method"] == "start":
                     payLoad = {
-                        "method": "join",
-                        "game" : game
+                        "method": "start",
                     }
-                finally:
-                    payLoad = {
-                        "method": "join",
-                        "error" : "null gameId"
-                    }
+                    gameId = result["gameId"]
+                    if gameId == None:
+                        payLoad["error"] = "game is not found"
+                    else:
+                        try:
+                            game = games[gameId]
+                            if len(game.playeres) < 2:
+                                payLoad["game"] = {
+                                    "id": game.id,
+                                    "playeres": game.playeres,
+                                }
+                                payLoad["error"] = "game is empty"
+                            else:
+                                game.start()
+                                payLoad = game
+                        except KeyError:
+                            payLoad["error"] = "game is not found"
+                # finally:
+                #     payLoad = {
+                #         "method": "join",
+                #         "error" : "null gameId"
+                #     }
             payLoadStringify = json.dumps(payLoad, default=vars)
+            # payLoadStringify = json_string = jsonpickle.encode(payLoad)
             await websocket.send(payLoadStringify)
             print(f'Server Sent: {payLoadStringify}')
     finally:

@@ -42,7 +42,7 @@ let ws = new WebSocket("ws://localhost:5000")
 // console.log("ws = ", ws);
 const btnCreate = document.getElementById("btnCreate");
 const btnJoin = document.getElementById("btnJoin");
-// const txtGameId = document.getElementById("txtGameId");
+const txtGameId = document.getElementById("txtGameId");
 // const divPlayers = document.getElementById("divPlayers");
 // const divBoard = document.getElementById("divBoard");
 
@@ -50,9 +50,9 @@ const btnJoin = document.getElementById("btnJoin");
 //wiring events
 btnJoin.addEventListener("click", e => {
 
-    // if (gameId === null)
-    //     gameId = txtGameId.value;
-    
+    if (gameId === null)
+        gameId = txtGameId.value;
+    console.log("e = ", e);
     const payLoad = {
         "method": "join",
         "clientId": clientId,

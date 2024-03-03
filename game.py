@@ -145,7 +145,7 @@ def main():
 
     while run:
         clock.tick(FPS)
-        # draw(WIN, [left_paddle, right_paddle], ball, left_score, right_score)
+        draw(WIN, [left_paddle, right_paddle], ball, left_score, right_score)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
