@@ -1,4 +1,4 @@
-#board {
+#canvas {
     width: 700px;
     height: 500px;
     background-color: aquamarine;
@@ -38,7 +38,7 @@
     height: 20px;
     background-color: rgb(163, 26, 46);
     border-radius: 30px;
-    /* position: absolute; */
+    position: absolute;
     /* top: 49%; */
     /* margin-left: 49.3%; */
 }

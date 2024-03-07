@@ -1,34 +1,15 @@
 
-// const canvas = document.querySelector("canvas");
-// const context = canvas.getContext("2d");
+const canvas = document.querySelector("canvas");
+const context = canvas.getContext("2d");
 
-// const playerWidth = 7;
-// const playerHeight = 30;
-
-// let data = {
-//     ball: new Ball(100, 75, 5, "red"),
-//     player1: new player(canvas.width - 5 - playerWidth, canvas.height / 2 - playerHeight / 2, playerWidth, playerHeight, "left"),
-//     player2: new player(5, canvas.height / 2 - playerHeight / 2, playerWidth, playerHeight, "right"),
-// }
-
-// let componentsToDraw = [data.ball, data.player1, data.player2];
-// console.log(data);
-
-// function drawComponents() {
-//     for (let i = 0; i < componentsToDraw.length; i++) {
-//         componentsToDraw[i].draw();
-//     }
-// }
 
 // function loop() {
 //     requestAnimationFrame(loop);
 //     update();
 //     context.clearRect(0, 0, canvas.width, canvas.height);
 //     data.ball.update();
-//     drawComponents();
 // }
 
-// loop();
 
 
 function isOpen(ws) { return ws.readyState === ws.OPEN }
@@ -42,17 +23,20 @@ let ws = new WebSocket("ws://localhost:5000")
 // console.log("ws = ", ws);
 const btnCreate = document.getElementById("btnCreate");
 const btnJoin = document.getElementById("btnJoin");
+const btnStart = document.getElementById("btnStart");
 const txtGameId = document.getElementById("txtGameId");
 // const divPlayers = document.getElementById("divPlayers");
-// const divBoard = document.getElementById("divBoard");
+const divBoard = document.getElementById("divBoard");
 
 
 //wiring events
 btnJoin.addEventListener("click", e => {
-
+    // const obj = {
+    //     "key": [1, 2, 5, 5],
+    //     "objs": [{"red": 5}, {"blue": 6}]
+    // };
     if (gameId === null)
         gameId = txtGameId.value;
-    console.log("e = ", e);
     const payLoad = {
         "method": "join",
         "clientId": clientId,
@@ -63,6 +47,17 @@ btnJoin.addEventListener("click", e => {
     } 
     // console.log("ws.readyState = ", ws.readyState);
     console.log("ws.send(JSON.stringify(payLoad))) =", ws.send(JSON.stringify(payLoad)));
+
+})
+
+btnStart.addEventListener("click", e => {
+
+    const payLoad = {
+        "method": "start",
+        "clientId": clientId,
+        "gameId": gameId
+    }
+    ws.send(JSON.stringify(payLoad));
 
 })
 
@@ -107,13 +102,15 @@ ws.onmessage = message => {
 
     //update
     if (response.method === "update"){
-        //{1: "red", 1}
-        if (!response.game.state) return;
-        for(const b of Object.keys(response.game.state))
+        if (!response.state) return;
+
+        for(const b of Object.keys(response.state))
         {
-            const color = response.game.state[b];
-            const ballObject = document.getElementById("ball" + b);
-            ballObject.style.backgroundColor = color
+            const objToDraw = response.state[b];
+            // context.fillRect(objToDraw._x, objToDraw._y, objToDraw._radius * 2, objToDraw._radius * 2);
+            // const ballObject = document.getElementById(b);
+            // ballObject.style._x = objToDraw._x;
+            // ballObject.style._y = objToDraw._y;
         }
     }
 
@@ -121,9 +118,39 @@ ws.onmessage = message => {
     if (response.method === "join"){
         const game = response.game;
         console.log(game);
+        console.log("joined")
+        const objToDraw = response.game.state.paddle1;
+        console.log("objToDraw = ", objToDraw)
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.fillRect(objToDraw.x, objToDraw.y, objToDraw.width, objToDraw.height);
         // while(divPlayers.firstChild)
         //     divPlayers.removeChild (divPlayers.firstChild)
-
+        // const a = document.createElement("div");
+        // console.log("response.game = " ,response.game);
+        // a.style.id = "paddle1";
+        // a.style.width = "20px";
+        // a.style.height = "100px";
+        // a.style.background = "black";
+        // a.style.top = response.game.state.paddle1.x + "px";
+        // a.style.left = response.game.state.paddle1.y + "px";
+        // divBoard.appendChild(a);
+        // const b = document.createElement("div");
+        
+        // b.style.id = "paddle2";
+        // b.style.width = "20px";
+        // b.style.height = "100px";
+        // b.style.background = "black";
+        // b.style.top = response.game.state.paddle2.x + "px";
+        // b.style.left = response.game.state.paddle2.y + "px";
+        // divBoard.appendChild(b);
+        // const c = document.createElement("div");
+        
+        // c.style.id = "ball";
+        // c.style.width = "15px";
+        // c.style.height = "15px";
+        // c.style.background = "black";
+        // divBoard.appendChild(c);
+        // d.textContent = c.clientId;
         // game.clients.forEach (c => {
 
         //     const d = document.createElement("div");
@@ -159,6 +186,17 @@ ws.onmessage = message => {
         //         ws.send(JSON.stringify(payLoad))
         //     })
         //     divBoard.appendChild(b);
+        // }
+    }
+
+    if (response.method === "start") {
+        //{1: "red", 1}
+        // if (!response.game.state) return;
+        // for(const b of Object.keys(response.game.state))
+        // {
+        //     const color = response.game.state[b];
+        //     const ballObject = document.getElementById("ball" + b);
+        //     ballObject.style.backgroundColor = color
         // }
     }
 }
