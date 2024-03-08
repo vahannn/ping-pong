@@ -32,7 +32,7 @@ async def send_obj(obj, viewers):
     payLoad = {
         "method": "update",
         "state": {
-            str(type(obj)): obj
+            obj.id: obj
         }
     }
     payLoadStringify = json.dumps(payLoad, default=vars)
@@ -45,15 +45,16 @@ class Paddle:
     COLOR = WHITE
     VEL = 4
 
-    def __init__(self, x, y, width, height):
+    def __init__(self, x, y, width, height, id):
+        self.id = id
         self.x = self.original_x = x
         self.y = self.original_y = y
         self.width = width
         self.height = height
 
-    def draw(self, win):
-        pygame.draw.rect(
-            win, self.COLOR, (self.x, self.y, self.width, self.height))
+    # def draw(self, win):
+    #     pygame.draw.rect(
+    #         win, self.COLOR, (self.x, self.y, self.width, self.height))
 
     def move(self, up=True):
         if up:
@@ -75,6 +76,8 @@ class Ball:
         self.radius = radius
         self.x_vel = self.MAX_VEL
         self.y_vel = 0
+        self.id = "ball"
+        self.ballRadius = BALL_RADIUS
 
     def draw(self, win):
         pygame.draw.circle(win, self.COLOR, (self.x, self.y), self.radius)
@@ -91,11 +94,10 @@ class Ball:
 
 class Player:
 
-    def __init__(self, id, paddle):
+    def __init__(self, id, paddle, websocket):
         self.id = id
         self.score = 0
         self.paddle = paddle
-        # self.websocket = websocket
 
 
 class Game:
@@ -106,20 +108,22 @@ class Game:
         self.id = id
         self.playeres = []
         self.viewers = list()
+        self.ball = Ball(WIDTH // 2, HEIGHT // 2, BALL_RADIUS)
 
-    def addPlayer(self, id, websocket):
+    def addPlayer(self, id, websocket, name):
         if len(self.playeres) < self.MAX_PLAYER:
             if len(self.playeres) == 0:
                 player = Player(id, Paddle(10, HEIGHT//2 - PADDLE_HEIGHT //
-                                2, PADDLE_WIDTH, PADDLE_HEIGHT))
+                                2, PADDLE_WIDTH, PADDLE_HEIGHT, name), websocket)
             else:
                 player = Player(id, Paddle(WIDTH - 10 - PADDLE_WIDTH, HEIGHT //
-                                2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT))
+                                2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT, name), websocket)
             self.playeres.append(player)
             self.viewers.append({
                 "id": id,
                 "ws": websocket,
             })
+            wsockets[id] = websocket
 
     def handle_collision(self, ball, left_paddle, right_paddle):
         if ball.y + ball.radius >= HEIGHT:
@@ -150,18 +154,13 @@ class Game:
                     ball.y_vel = -1 * y_vel
 
 
-    async def handle_paddle_movement(self, keys, left_paddle, right_paddle):
-        # if keys[pygame.K_w] and left_paddle.y - left_paddle.VEL >= 0:
-        #     left_paddle.move(up=True)
-        # if keys[pygame.K_s] and left_paddle.y + left_paddle.VEL + left_paddle.height <= HEIGHT:
-        #     left_paddle.move(up=False)
-
-        if keys[pygame.K_UP] and right_paddle.y - right_paddle.VEL >= 0:
-            right_paddle.move(up=True)
-            await send_obj(right_paddle, self.viewers)
-        if keys[pygame.K_DOWN] and right_paddle.y + right_paddle.VEL + right_paddle.height <= HEIGHT:
-            right_paddle.move(up=False)
-            await send_obj(left_paddle, self.viewers)
+    async def handle_paddle_movement(self, paddle, up=True):
+        if paddle.y - paddle.VEL >= 0:
+            paddle.move(up=up)
+            await send_obj(paddle, self.viewers)
+        if paddle.y + paddle.VEL + paddle.height <= HEIGHT:
+            paddle.move(up=up)
+            await send_obj(paddle, self.viewers)
 
     async def some_callback(args):
         await some_function()
@@ -177,11 +176,9 @@ class Game:
         run = True
         clock = pygame.time.Clock()
 
-        left_paddle = Paddle(10, HEIGHT//2 - PADDLE_HEIGHT //
-                            2, PADDLE_WIDTH, PADDLE_HEIGHT)
-        right_paddle = Paddle(WIDTH - 10 - PADDLE_WIDTH, HEIGHT //
-                            2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT)
-        ball = Ball(WIDTH // 2, HEIGHT // 2, BALL_RADIUS)
+        left_paddle = self.playeres[0].paddle
+        right_paddle = self.playeres[1].paddle
+        ball = self.ball
         # print("self.viewers = ", self.viewers)
         await send_obj(left_paddle, self.viewers)
         await send_obj(right_paddle, self.viewers)
@@ -198,8 +195,8 @@ class Game:
                     run = False
                     break
 
-            keys = pygame.key.get_pressed()
-            await self.handle_paddle_movement(keys, left_paddle, right_paddle)
+            # keys = pygame.key.get_pressed()
+            # await self.handle_paddle_movement(keys, left_paddle, right_paddle)
             ball.move()
             self.handle_collision(ball, left_paddle, right_paddle)
 
@@ -219,11 +216,11 @@ class Game:
                 win_text = "Right Player Won!"
 
             if won:
-                text = SCORE_FONT.render(win_text, 1, WHITE)
-                WIN.blit(text, (WIDTH//2 - text.get_width() //
-                                2, HEIGHT//2 - text.get_height()//2))
-                pygame.display.update()
-                pygame.time.delay(5000)
+                # text = SCORE_FONT.render(win_text, 1, WHITE)
+                # WIN.blit(text, (WIDTH//2 - text.get_width() //
+                #                 2, HEIGHT//2 - text.get_height()//2))
+                # pygame.display.update()
+                # pygame.time.delay(5000)
                 ball.reset()
                 left_paddle.reset()
                 right_paddle.reset()
@@ -231,12 +228,13 @@ class Game:
                 right_score = 0
 
 games = {}
+wsockets = {}
 
 async def server(websocket, path):
     try:
         async for message in websocket:
             result = json.loads(message)
-            # print("Server Received: ", message)
+            print("Server Received: ", message)
             payLoad = {}
             # del test_dict['Mani']
             if result["method"] == "create":
@@ -244,7 +242,7 @@ async def server(websocket, path):
                 gameId = str(gameId)
                 game = Game(gameId)
                 games[gameId] = game
-                game.addPlayer(result["clientId"], websocket)
+                game.addPlayer(result["clientId"], websocket, "paddle1")
                 # print("game.viewers = ", game.viewers)
                 payLoad = {
                     "method": "create",
@@ -273,24 +271,26 @@ async def server(websocket, path):
                             }
                             payLoad["error"] = "game is full"
                         else:
-                            game.addPlayer(result["clientId"], websocket)
+                            game.addPlayer(result["clientId"], websocket, "paddle2")
                             payLoad["game"] = {
                                 "id": game.id,
                                 "playeres": game.playeres,
                                 "viewers": [],
                                 "state": {
-                                    "paddle1": Paddle(10, HEIGHT//2 - PADDLE_HEIGHT //
-                                                    2, PADDLE_WIDTH, PADDLE_HEIGHT),
-                                    "paddle2": Paddle(WIDTH - 10 - PADDLE_WIDTH, HEIGHT //
-                                                    2 - PADDLE_HEIGHT//2, PADDLE_WIDTH, PADDLE_HEIGHT),
-                                    "ball": Ball(WIDTH // 2, HEIGHT // 2, BALL_RADIUS),
+                                    game.playeres[0].paddle.id: game.playeres[0].paddle,
+                                    game.playeres[1].paddle.id: game.playeres[1].paddle,
+                                    "ball": game.ball,
                                 }
                             }
                     except KeyError:
                         payLoad["error"] = "game is not found"
+                    payLoadStringify = json.dumps(payLoad, default=vars)
+                    await wsockets[game.playeres[0].id].send(payLoadStringify)
+                    await wsockets[game.playeres[1].id].send(payLoadStringify)
+                    continue
             if result["method"] == "start":
                 payLoad = {
-                    "method": "start",
+                    "method": "update",
                 }
                 gameId = result["gameId"]
                 if gameId == None:
@@ -314,6 +314,34 @@ async def server(websocket, path):
                                 "playeres": game.playeres,
                                 "viewers": [],
                             }
+                    except KeyError:
+                        payLoad["error"] = "game is not found"
+            if result["method"] == "updateKey":
+                payLoad = {
+                    "method": "updateKey",
+                }
+                gameId = result["gameId"]
+                if gameId == None:
+                    payLoad["error"] = "game is not found"
+                else:
+                    try:
+                        game = games[gameId]
+                        if len(game.playeres) < 2:
+                            payLoad["game"] = {
+                                "id": game.id,
+                                "playeres": game.playeres,
+                                "viewers": [],
+                            }
+                            payLoad["error"] = "game is empty"
+                        else:
+                            if result["clientId"] == game.playeres[0].id:
+                                await game.handle_paddle_movement(game.playeres[0].paddle, True if result["keyCode"] == "up" else False)
+                                continue
+                            elif result["clientId"] == game.playeres[1].id:
+                                await game.handle_paddle_movement(game.playeres[1].paddle, True if result["keyCode"] == "up" else False)
+                                continue
+                            else:
+                                payLoad["error"] = "player is not found"
                     except KeyError:
                         payLoad["error"] = "game is not found"
 

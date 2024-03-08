@@ -1,9 +1,17 @@
-#canvas {
+/* #canvas {
     width: 700px;
     height: 500px;
     background-color: aquamarine;
     /* margin: 0 auto; */
     /* position: relative; */
+/* }  */
+
+#divBoard {
+    width: 700px;
+    height: 500px;
+    background-color: aquamarine;
+    /* margin: 0 auto; */
+    position: relative;
 }
 
 #line {

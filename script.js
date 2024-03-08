@@ -1,7 +1,6 @@
 
-const canvas = document.querySelector("canvas");
-const context = canvas.getContext("2d");
-
+// const canvas = document.querySelector("canvas");
+// const context = canvas.getContext("2d");
 
 // function loop() {
 //     requestAnimationFrame(loop);
@@ -30,6 +29,25 @@ const divBoard = document.getElementById("divBoard");
 
 
 //wiring events
+document.addEventListener("keydown", event => {
+    console.log(event);
+    if (gameId === null)
+        return ;
+    const payLoad = {
+        "method": "updateKey",
+        "clientId": clientId,
+        "gameId": gameId
+    }
+    if (event.key === "ArrowUp") {
+        payLoad["keyCode"] = "up";
+    }
+    
+    if (event.key === "ArrowDown") {
+        payLoad["keyCode"] = "down";
+    }
+    ws.send(JSON.stringify(payLoad));
+});
+
 btnJoin.addEventListener("click", e => {
     // const obj = {
     //     "key": [1, 2, 5, 5],
@@ -80,14 +98,15 @@ ws.onmessage = message => {
     //message.data
 
     const response = JSON.parse(message.data);
-    console.log("Client id Set successfully " + response.clientId);
-    console.log("response = ", response);
+    // console.log("Client id Set successfully " + response.clientId);
+    // console.log("response = ", response);
     // if (ws.readyState === WebSocket.CLOSED) {
     //     console.log("socket closed");
     // } else
     //     console.log("socket active");
     //connect
     if (response.method === "connect"){
+        console.log("response = ", response);
         clientId = response.clientId;
         console.log("Client id Set successfully " + clientId)
         console.log("barev")
@@ -95,6 +114,7 @@ ws.onmessage = message => {
 
     //create
     if (response.method === "create"){
+        console.log("response = ", response);
         gameId = response.game["id"];
         console.log("game successfully created with id " + response.game.id + " with " + response.game.balls + " balls")  
     }
@@ -108,9 +128,14 @@ ws.onmessage = message => {
         {
             const objToDraw = response.state[b];
             // context.fillRect(objToDraw._x, objToDraw._y, objToDraw._radius * 2, objToDraw._radius * 2);
-            // const ballObject = document.getElementById(b);
-            // ballObject.style._x = objToDraw._x;
-            // ballObject.style._y = objToDraw._y;
+            const ballObject = document.getElementById(b);
+            if (ballObject === null) {
+                console.log("ballObject = ", ballObject);
+                console.log("b = ", b);
+            } else {
+                ballObject.style.left = objToDraw.x + "px";
+                ballObject.style.top = objToDraw.y + "px";
+            }
         }
     }
 
@@ -119,37 +144,45 @@ ws.onmessage = message => {
         const game = response.game;
         console.log(game);
         console.log("joined")
-        const objToDraw = response.game.state.paddle1;
-        console.log("objToDraw = ", objToDraw)
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.fillRect(objToDraw.x, objToDraw.y, objToDraw.width, objToDraw.height);
-        // while(divPlayers.firstChild)
-        //     divPlayers.removeChild (divPlayers.firstChild)
-        // const a = document.createElement("div");
+        // context.clearRect(0, 0, canvas.width, canvas.height);
+        // context.fillRect(objToDraw.x, objToDraw.y, objToDraw.width, objToDraw.height);
+        // context.fillRect(10, 100, 10, 10);
+
+        const a = document.createElement("div");
         // console.log("response.game = " ,response.game);
-        // a.style.id = "paddle1";
-        // a.style.width = "20px";
-        // a.style.height = "100px";
-        // a.style.background = "black";
-        // a.style.top = response.game.state.paddle1.x + "px";
-        // a.style.left = response.game.state.paddle1.y + "px";
-        // divBoard.appendChild(a);
-        // const b = document.createElement("div");
+        a.id = "paddle1";
+        a.style.width = "20px";
+        a.style.height = "100px";
+        a.style.background = "black";
+        a.style.position = "absolute";
+        a.style.left = response.game.state.paddle1.x + "px";
+        a.style.top = response.game.state.paddle1.y + "px";
+        divBoard.appendChild(a);
+
+        const b = document.createElement("div");
         
-        // b.style.id = "paddle2";
-        // b.style.width = "20px";
-        // b.style.height = "100px";
-        // b.style.background = "black";
-        // b.style.top = response.game.state.paddle2.x + "px";
-        // b.style.left = response.game.state.paddle2.y + "px";
-        // divBoard.appendChild(b);
-        // const c = document.createElement("div");
+        b.id = "paddle2";
+        b.style.width = "20px";
+        b.style.height = "100px";
+        b.style.background = "black";
+        b.style.position = "absolute";
+        b.style.left = response.game.state.paddle2.x + "px";
+        b.style.top = response.game.state.paddle2.y + "px";
+        divBoard.appendChild(b);
+
+        const c = document.createElement("div");
         
-        // c.style.id = "ball";
-        // c.style.width = "15px";
-        // c.style.height = "15px";
-        // c.style.background = "black";
-        // divBoard.appendChild(c);
+        c.id = "ball";
+        c.style.width = response.game.state.ball.ballRadius * 5 + "px";
+        c.style.height = response.game.state.ball.ballRadius * 5 + "px";
+        c.style.borderRadius = "30px";
+        c.style.background = "black";
+        c.style.position = "absolute";
+        c.style.left = response.game.state.ball.x + "px";
+        c.style.top = response.game.state.ball.y + "px";
+        divBoard.appendChild(c);
+
+
         // d.textContent = c.clientId;
         // game.clients.forEach (c => {
 
@@ -189,14 +222,14 @@ ws.onmessage = message => {
         // }
     }
 
-    if (response.method === "start") {
-        //{1: "red", 1}
-        // if (!response.game.state) return;
-        // for(const b of Object.keys(response.game.state))
-        // {
-        //     const color = response.game.state[b];
-        //     const ballObject = document.getElementById("ball" + b);
-        //     ballObject.style.backgroundColor = color
-        // }
-    }
+    // if (response.method === "start") {
+    //     //{1: "red", 1}
+    //     // if (!response.game.state) return;
+    //     // for(const b of Object.keys(response.game.state))
+    //     // {
+    //     //     const color = response.game.state[b];
+    //     //     const ballObject = document.getElementById("ball" + b);
+    //     //     ballObject.style.backgroundColor = color
+    //     // }
+    // }
 }
