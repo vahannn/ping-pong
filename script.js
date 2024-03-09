@@ -10,15 +10,27 @@
 // }
 
 
+let uuid = function(){
+    return Array
+     .from(Array(16))
+     .map(e => Math.floor(Math.random() * 255)
+     .toString(16)
+     .padStart(2,"0"))
+     .join('')
+     .match(/.{1,4}/g)
+     .join('-')
+}
+
 
 function isOpen(ws) { return ws.readyState === ws.OPEN }
 
 //HTML elements
 let clientId = null;
+clientId = uuid();
 let gameId = null;
 let playerColor = null;
 
-let ws = new WebSocket("ws://localhost:5000")
+let ws = new WebSocket("ws://10.12.1.5:5000")
 // console.log("ws = ", ws);
 const btnCreate = document.getElementById("btnCreate");
 const btnJoin = document.getElementById("btnJoin");
@@ -30,7 +42,7 @@ const divBoard = document.getElementById("divBoard");
 
 //wiring events
 document.addEventListener("keydown", event => {
-    console.log(event);
+    // console.log(event);
     if (gameId === null)
         return ;
     const payLoad = {
@@ -96,15 +108,17 @@ btnCreate.addEventListener("click", e => {
 
 ws.onmessage = message => {
     //message.data
+    let response;
+    if (message) {
+        try {
+            response = JSON.parse(message.data);
+        } catch (e) {
+            debugger;
+            console.log(e);
+            return console.error(e);
+        }
+    }
 
-    const response = JSON.parse(message.data);
-    // console.log("Client id Set successfully " + response.clientId);
-    // console.log("response = ", response);
-    // if (ws.readyState === WebSocket.CLOSED) {
-    //     console.log("socket closed");
-    // } else
-    //     console.log("socket active");
-    //connect
     if (response.method === "connect"){
         console.log("response = ", response);
         clientId = response.clientId;
@@ -133,8 +147,12 @@ ws.onmessage = message => {
                 console.log("ballObject = ", ballObject);
                 console.log("b = ", b);
             } else {
-                ballObject.style.left = objToDraw.x + "px";
-                ballObject.style.top = objToDraw.y + "px";
+                let ballRadius = 0;
+                if (b === "ball") {
+                    ballRadius = response.state.ball.ballRadius;
+                }
+                ballObject.style.left = objToDraw.x - ballRadius + "px";
+                ballObject.style.top = objToDraw.y - ballRadius + "px";
             }
         }
     }
@@ -171,16 +189,32 @@ ws.onmessage = message => {
         divBoard.appendChild(b);
 
         const c = document.createElement("div");
-        
+        const ballRadius = response.game.state.ball.ballRadius;
         c.id = "ball";
-        c.style.width = response.game.state.ball.ballRadius * 5 + "px";
-        c.style.height = response.game.state.ball.ballRadius * 5 + "px";
+        c.style.width = ballRadius * 2 + "px";
+        c.style.height = ballRadius * 2 + "px";
         c.style.borderRadius = "30px";
         c.style.background = "black";
         c.style.position = "absolute";
-        c.style.left = response.game.state.ball.x + "px";
-        c.style.top = response.game.state.ball.y + "px";
+        c.style.left = response.game.state.ball.x - ballRadius + "px";
+        c.style.top = response.game.state.ball.y - ballRadius + "px";
         divBoard.appendChild(c);
+
+        const scoreDiv = document.createElement("div");
+        scoreDiv.id = "scoreDiv1";
+        scoreDiv.style.width = "100px";
+        scoreDiv.style.height = "100px";
+        scoreDiv.style.background = "transparent";
+        scoreDiv.style.position = "absolute";
+        scoreDiv.style.left = "200px";
+        scoreDiv.style.top = "10px";
+        divBoard.appendChild(scoreDiv);
+        
+        const scoreText = document.createElement("span");
+        let score = document.createTextNode("0");
+        scoreText.appendChild(score);
+
+        scoreDiv.appendChild(scoreText);
 
 
         // d.textContent = c.clientId;

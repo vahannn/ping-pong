@@ -5,11 +5,20 @@ import jsonpickle
 import uuid
 import pygame
 import threading
+from dataclasses import dataclass, asdict
+# from typing import List
 # from threading import Thread
 
 pygame.init()
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
+
+
+COLOR = WHITE
+VEL = 4
+MAX_VEL = 5
+COLOR = WHITE
+MAX_PLAYER = 2
 
 WIDTH, HEIGHT = 700, 500
 # WIN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -41,9 +50,14 @@ async def send_obj(obj, viewers):
 
 websockets.json_dump_obj = json_dump_obj
 
+@dataclass
 class Paddle:
-    COLOR = WHITE
-    VEL = 4
+
+    id: int
+    x: int
+    y: int
+    width: int
+    height: int
 
     def __init__(self, x, y, width, height, id):
         self.id = id
@@ -58,23 +72,22 @@ class Paddle:
 
     def move(self, up=True):
         if up:
-            self.y -= self.VEL
+            self.y -= VEL
         else:
-            self.y += self.VEL
+            self.y += VEL
 
     def reset(self):
         self.x = self.original_x
         self.y = self.original_y
 
+@dataclass
 class Ball:
-    MAX_VEL = 5
-    COLOR = WHITE
 
     def __init__(self, x, y, radius):
         self.x = self.original_x = x
         self.y = self.original_y = y
         self.radius = radius
-        self.x_vel = self.MAX_VEL
+        self.x_vel = MAX_VEL
         self.y_vel = 0
         self.id = "ball"
         self.ballRadius = BALL_RADIUS
@@ -92,26 +105,36 @@ class Ball:
         self.y_vel = 0
         self.x_vel *= -1
 
+@dataclass
 class Player:
+    id: int
+    score: int
+    paddle: Paddle
+    ball: Ball
 
     def __init__(self, id, paddle, websocket):
         self.id = id
         self.score = 0
         self.paddle = paddle
 
-
+@dataclass
 class Game:
     
-    MAX_PLAYER = 2
+    id: int
+    playeres: list
+    viewers: list
 
     def __init__(self, id):
         self.id = id
+        self.viewers = []
         self.playeres = []
-        self.viewers = list()
         self.ball = Ball(WIDTH // 2, HEIGHT // 2, BALL_RADIUS)
+    
+    # def toJson(self):
+    #     return (json.dumps(self, default=vars))
 
     def addPlayer(self, id, websocket, name):
-        if len(self.playeres) < self.MAX_PLAYER:
+        if len(self.playeres) < MAX_PLAYER:
             if len(self.playeres) == 0:
                 player = Player(id, Paddle(10, HEIGHT//2 - PADDLE_HEIGHT //
                                 2, PADDLE_WIDTH, PADDLE_HEIGHT, name), websocket)
@@ -123,7 +146,6 @@ class Game:
                 "id": id,
                 "ws": websocket,
             })
-            wsockets[id] = websocket
 
     def handle_collision(self, ball, left_paddle, right_paddle):
         if ball.y + ball.radius >= HEIGHT:
@@ -138,7 +160,7 @@ class Game:
 
                     middle_y = left_paddle.y + left_paddle.height / 2
                     difference_in_y = middle_y - ball.y
-                    reduction_factor = (left_paddle.height / 2) / ball.MAX_VEL
+                    reduction_factor = (left_paddle.height / 2) / MAX_VEL
                     y_vel = difference_in_y / reduction_factor
                     ball.y_vel = -1 * y_vel
 
@@ -149,17 +171,17 @@ class Game:
 
                     middle_y = right_paddle.y + right_paddle.height / 2
                     difference_in_y = middle_y - ball.y
-                    reduction_factor = (right_paddle.height / 2) / ball.MAX_VEL
+                    reduction_factor = (right_paddle.height / 2) / MAX_VEL
                     y_vel = difference_in_y / reduction_factor
                     ball.y_vel = -1 * y_vel
 
-
+    #  TODO there is a bug
     async def handle_paddle_movement(self, paddle, up=True):
-        if paddle.y - paddle.VEL >= 0:
-            paddle.move(up=up)
+        if up == True and paddle.y - VEL >= 0:
+            paddle.move(up)
             await send_obj(paddle, self.viewers)
-        if paddle.y + paddle.VEL + paddle.height <= HEIGHT:
-            paddle.move(up=up)
+        if  up == False and paddle.y + VEL + paddle.height <= HEIGHT:
+            paddle.move(up)
             await send_obj(paddle, self.viewers)
 
     async def some_callback(args):
@@ -224,17 +246,19 @@ class Game:
                 ball.reset()
                 left_paddle.reset()
                 right_paddle.reset()
+                await send_obj(left_paddle, self.viewers)
+                await send_obj(right_paddle, self.viewers)
+                await send_obj(ball, self.viewers)
                 left_score = 0
                 right_score = 0
 
 games = {}
-wsockets = {}
 
 async def server(websocket, path):
     try:
         async for message in websocket:
             result = json.loads(message)
-            print("Server Received: ", message)
+            # print("Server Received: ", message)
             payLoad = {}
             # del test_dict['Mani']
             if result["method"] == "create":
@@ -250,7 +274,7 @@ async def server(websocket, path):
                         "id": game.id,
                         "playeres": game.playeres,
                         "viewers": [],
-                    }
+                }
                 }
             if result["method"] == "join":
                 payLoad = {
@@ -284,9 +308,10 @@ async def server(websocket, path):
                             }
                     except KeyError:
                         payLoad["error"] = "game is not found"
+
                     payLoadStringify = json.dumps(payLoad, default=vars)
-                    await wsockets[game.playeres[0].id].send(payLoadStringify)
-                    await wsockets[game.playeres[1].id].send(payLoadStringify)
+                    for x in game.viewers:
+                        await x["ws"].send(payLoadStringify)
                     continue
             if result["method"] == "start":
                 payLoad = {
@@ -353,7 +378,7 @@ async def server(websocket, path):
         print("Unregister")
     
 
-start_server = websockets.serve(server, "localhost", 5000)
+start_server = websockets.serve(server, "10.12.1.5", 5000)
 
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
