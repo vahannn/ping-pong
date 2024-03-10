@@ -6,52 +6,69 @@
     /* position: relative; */
 /* }  */
 
-#divBoard {
+#board {
+    display: flex;
+    position: relative;
     width: 700px;
     height: 500px;
     background-color: aquamarine;
-    /* margin: 0 auto; */
-    position: relative;
+    justify-content: space-between;
 }
 
+.ball {
+    position: absolute;
+    background-color: black;
+    border-radius: 30px;
+}
+
+/* 
 #line {
     width: 2px;
     height: 100%;
     background-color: black;
     margin: 0 auto;
-}
+} */
 
-.players {
-    display: flex;
-    justify-content: space-between;
-    padding: 0px 5px;
+.paddle {
     position: absolute;
-    top: 50%;
+    /* width: 2%;
+    height: 35%; */
+    background-color: black;
 }
 
-.player {
+.score {
+    top: 5%;
+    justify-content: space-between;
+    font-size: 50px;
+    margin: 5px 50px;
+    background: "transparent";
+}
+
+#score1 {
+    /* background-color: bisque; */
+    /* top: 5%; */
+    /* left: 5%; */
+}
+
+#score2 {
+    /* background-color: blue; */
+    /* top: 5%; */
+    /* left: 95%; */
+}
+
+/* .player {
     width: 5px;
     height: 40px;
     background-color: rgb(0, 0, 0);
-}
-
+} */
+/* 
 #player2 {
     right: 0;
     margin-left: 1380px;
-}
+} */
 
-#ball {
-    /* margin: auto; */
-    width: 20px;
-    height: 20px;
-    background-color: rgb(163, 26, 46);
-    border-radius: 30px;
-    position: absolute;
-    /* top: 49%; */
-    /* margin-left: 49.3%; */
-}
 
-.play_button_div {
+/* .play_button_div {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -62,9 +79,9 @@
     width: 400px;
     height: 200px;
     background-color: rgb(39, 64, 87);
-}
+} */
 
-#play_button {
+/* #play_button {
     background-color: rgb(198, 52, 54);
     color: rgb(0, 0, 0);
     width: 100px;
@@ -72,10 +89,10 @@
     border: none;
     border-radius: 10px;
     font-family: Arial, Helvetica, sans-serif
-}
-
+} */
+/* 
 section {
     display: flex;
     justify-content: center;
     align-items: center;
-}
+} */

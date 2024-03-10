@@ -15,7 +15,7 @@ BLACK = (0, 0, 0)
 
 
 COLOR = WHITE
-VEL = 4
+VEL = 10
 MAX_VEL = 5
 COLOR = WHITE
 MAX_PLAYER = 2
@@ -220,15 +220,37 @@ class Game:
             # keys = pygame.key.get_pressed()
             # await self.handle_paddle_movement(keys, left_paddle, right_paddle)
             ball.move()
+            await send_obj(ball, self.viewers)
             self.handle_collision(ball, left_paddle, right_paddle)
 
             if ball.x < 0:
                 right_score += 1
                 ball.reset()
+                payLoad = {
+                    "method": "update",
+                    "mode": "updateScore",
+                    "state": {
+                        "score1": left_score,
+                        "score2": right_score,
+                    }
+                }
+                payLoadStringify = json.dumps(payLoad, default=vars)
+                for x in self.viewers:
+                    await x["ws"].send(payLoadStringify)
             elif ball.x > WIDTH:
                 left_score += 1
                 ball.reset()
-            await send_obj(ball, self.viewers)
+                payLoad = {
+                    "method": "update",
+                    "mode": "updateScore",
+                    "state": {
+                        "score1": left_score,
+                        "score2": right_score,
+                    }
+                }
+                payLoadStringify = json.dumps(payLoad, default=vars)
+                for x in self.viewers:
+                    await x["ws"].send(payLoadStringify)
             won = False
             if left_score >= WINNING_SCORE:
                 won = True
@@ -251,6 +273,17 @@ class Game:
                 await send_obj(ball, self.viewers)
                 left_score = 0
                 right_score = 0
+                payLoad = {
+                    "method": "update",
+                    "mode": "updateScore",
+                    "state": {
+                        "score1": left_score,
+                        "score2": right_score,
+                    }
+                }
+                payLoadStringify = json.dumps(payLoad, default=vars)
+                for x in self.viewers:
+                    await x["ws"].send(payLoadStringify)
 
 games = {}
 
@@ -360,6 +393,7 @@ async def server(websocket, path):
                             payLoad["error"] = "game is empty"
                         else:
                             if result["clientId"] == game.playeres[0].id:
+                                # // TODO remove from here connect with fps
                                 await game.handle_paddle_movement(game.playeres[0].paddle, True if result["keyCode"] == "up" else False)
                                 continue
                             elif result["clientId"] == game.playeres[1].id:
@@ -376,7 +410,6 @@ async def server(websocket, path):
             # print(f'Server Sent: {payLoadStringify}')
     finally:
         print("Unregister")
-    
 
 start_server = websockets.serve(server, "10.12.1.5", 5000)
 
