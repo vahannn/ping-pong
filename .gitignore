@@ -1,3 +1,4 @@
 test.py
 .vscode
-'{"method": "update", "state": {"paddle1": {"id": "paddle1", "x": 10, "original_x": 10, "y": 180, "original_y": 200, "width": 20, "height": 100}}}{"method": "update", "state": {"ball": {"x": 380, "original_x": 350, "y": 492.43999999998897, "original_y": 250, "radius": 7, "x_vel": 5, "y_vel": -1.7199999999998568, "id": "ball", "ballRadius": 7}}}'
+src
+public

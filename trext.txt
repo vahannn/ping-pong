@@ -1,0 +1,5 @@
+
+"{\"method\": \"update\", \"game\": {\"id\": \"1f7cc690-c751-409a-98f8-9289cb0cdf6c\", \"playeres\": [{\"id\": \"c880-76d7-93c1-ef59-012c-91c4-6ca2-0cb7\", \"score\": 0, \"paddle\": {\"id\": \"paddle1\", \"x\": 10, \"original_x\": 10, \"y\": 200, \"original_y\": 200, \"width\": 20, \"height\": 100}}, {\"id\": \"25a6-763c-b001-0edd-4122-a198-707f-8353\", \"score\": 0, \"paddle\": {\"id\": \"paddle2\", \"x\": 670, \"original_x\": 670, \"y\": 200, \"original_y\": 200, \"width\": 20, \"height\": 100}}], \"viewers\": []}}{\"method\": \"update\", \"state\": {\"paddle1\": {\"id\": \"paddle1\", \"x\": 10, \"original_x\": 10, \"y\": 200, \"original_y\": 200, \"width\": 20, \"height\": 100}}}"
+defaultPrevented
+: 
+false
